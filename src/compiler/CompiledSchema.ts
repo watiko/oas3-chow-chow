@@ -4,8 +4,9 @@ import * as betterAjvErrors from 'better-ajv-errors';
 import ajv from './ajv';
 
 export default class CompiledSchema {
-  private schemaObject?: SchemaObject;
-  private validator: Ajv.ValidateFunction;
+  private schemaObject: SchemaObject;
+  private ajvInstance: Ajv.Ajv;
+  private _validator?: Ajv.ValidateFunction;
 
   constructor(schema: SchemaObject, opts?: Ajv.Options, context?: any) {
     this.schemaObject = schema;
@@ -20,7 +21,14 @@ export default class CompiledSchema {
       validate: (schema: any) =>
         schema ? context.schemaContext === 'response' : true,
     });
-    this.validator = ajvInstance.compile(schema);
+    this.ajvInstance = ajvInstance;
+  }
+
+  private get validator(): Ajv.ValidateFunction {
+    if (!this._validator) {
+      this._validator = this.ajvInstance.compile(this.schemaObject);
+    }
+    return this._validator;
   }
 
   public validate(value: any) {
